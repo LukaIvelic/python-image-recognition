@@ -111,13 +111,15 @@ class GestureRecognizer:
                     return {
                         'name': self.display_names.get(gesture_name, gesture_name),
                         'action': gesture_data.get('action', 'none'),
-                        'gesture_key': gesture_name
+                        'gesture_key': gesture_name,
+                        'confidence': 1.0 # Default confidence for rule-based
                     }
         
         # If no match found, return UNKNOWN
         return {
             'name': 'UNKNOWN',
             'action': 'none',
-            'gesture_key': 'UNKNOWN'
+            'gesture_key': 'UNKNOWN',
+            'confidence': 0.0
         }
 

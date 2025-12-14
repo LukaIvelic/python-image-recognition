@@ -6,6 +6,7 @@ Handles PyAutoGUI actions based on detected gestures.
 import pyautogui
 import time
 import numpy as np
+from src.one_euro_filter import OneEuroFilter
 from config.config import HAND_PADDING_X, HAND_PADDING_Y, SCROLL_AMOUNT
 
 # Configure PyAutoGUI
@@ -40,7 +41,11 @@ class MouseController:
         # Cursor smoothing
         self.prev_x = None
         self.prev_y = None
-        self.smoothing_factor = 0.5  # 0 = no smoothing, 1 = max smoothing
+        # OneEuroFilter: min_cutoff=1.0 (stabilize slow), beta=0.007 (react fast)
+        self.x_filter = OneEuroFilter(min_cutoff=0.1, beta=0.005, d_cutoff=1.0)
+        self.y_filter = OneEuroFilter(min_cutoff=0.1, beta=0.005, d_cutoff=1.0)
+        
+        self.smoothing_factor = 0.5 # Deprecated but kept for compatibility logic loops if any
         
         # Action cooldowns to prevent spam
         self.last_click_time = 0
@@ -53,76 +58,56 @@ class MouseController:
         
     def smooth_position(self, x, y):
         """
-        Apply smoothing to cursor position for more stable movement.
-        
-        Args:
-            x: New x coordinate
-            y: New y coordinate
-            
-        Returns:
-            tuple: (smoothed_x, smoothed_y)
+        Apply smoothing to cursor position using OneEuroFilter.
+        Adaptive: High smoothing when slow, Low latency when fast.
         """
-        if self.prev_x is None or self.prev_y is None:
-            self.prev_x = x
-            self.prev_y = y
-            return x, y
+        t = time.time()
         
-        # Exponential moving average
-        smooth_x = self.prev_x * self.smoothing_factor + x * (1 - self.smoothing_factor)
-        smooth_y = self.prev_y * self.smoothing_factor + y * (1 - self.smoothing_factor)
+        # Apply One Euro Filter
+        screen_x = self.x_filter.filter(x, t)
+        screen_y = self.y_filter.filter(y, t)
         
-        self.prev_x = smooth_x
-        self.prev_y = smooth_y
-        
-        return int(smooth_x), int(smooth_y)
+        return int(screen_x), int(screen_y)
     
     def hand_to_screen_coords(self, hand_x, hand_y, frame_width, frame_height):
         """
-        Convert hand coordinates (normalized 0-1) to screen coordinates with padding.
-        
-        The padding allows the hand to stay within the camera's detection zone
-        while still being able to reach all screen edges.
-        
-        Args:
-            hand_x: Normalized x coordinate from hand landmark (0-1)
-            hand_y: Normalized y coordinate from hand landmark (0-1)
-            frame_width: Width of the video frame
-            frame_height: Height of the video frame
-            
-        Returns:
-            tuple: (screen_x, screen_y)
+        Convert hand coordinates with robust mapping scaling.
+        Ensures full screen reachability.
         """
-        # Apply padding: map the center portion of camera view to full screen
-        # For example, with 15% padding: hand at 0.15-0.85 in camera maps to 0-1.0 on screen
+        # Define the box within the camera view that maps to the full screen
+        x_min = self.padding_x
+        x_max = 1.0 - self.padding_x
+        y_min = self.padding_y
+        y_max = 1.0 - self.padding_y
         
-        # Normalize with padding
-        normalized_x = (hand_x - self.padding_x) / (1 - 2 * self.padding_x)
-        normalized_y = (hand_y - self.padding_y) / (1 - 2 * self.padding_y)
+        # Map x
+        if hand_x < x_min: screen_x = 0
+        elif hand_x > x_max: screen_x = self.screen_width
+        else:
+             screen_x = (hand_x - x_min) / (x_max - x_min) * self.screen_width
+             
+        # Map y
+        if hand_y < y_min: screen_y = 0
+        elif hand_y > y_max: screen_y = self.screen_height
+        else:
+            screen_y = (hand_y - y_min) / (y_max - y_min) * self.screen_height
         
-        # Clamp to 0-1 range (allows going slightly outside the padded zone)
-        normalized_x = max(0, min(1, normalized_x))
-        normalized_y = max(0, min(1, normalized_y))
+        # MIRROR FIX: 
+        # Config MIRROR_VIEW = True means camera frame is flipped.
+        # So Hand Right -> Frame Right (x=1.0).
+        # We want Cursor Right -> Screen Right (x=Width).
+        # Current logic checks x=1.0 > x_max -> screen_x = Width.
+        # This is CORRECT for mirroring.
+        # No inversion lines should exist here.
         
-        # Map to screen coordinates (flip x for natural movement)
-        screen_x = int((1 - normalized_x) * self.screen_width)
-        screen_y = int(normalized_y * self.screen_height)
-        
-        # Final clamp to screen bounds
-        screen_x = max(0, min(screen_x, self.screen_width - 1))
-        screen_y = max(0, min(screen_y, self.screen_height - 1))
-        
-        return screen_x, screen_y
+        return int(screen_x), int(screen_y)
     
     def move_cursor(self, hand_x, hand_y, frame_width, frame_height):
         """
         Move the cursor based on hand position.
-        
-        Args:
-            hand_x: Normalized x coordinate from hand landmark (0-1)
-            hand_y: Normalized y coordinate from hand landmark (0-1)
-            frame_width: Width of the video frame
-            frame_height: Height of the video frame
         """
+        # MIRROR FIX: Use direct mapping. 
+        # (Frame is already flipped if needed, so Left=Left, Right=Right)
         screen_x, screen_y = self.hand_to_screen_coords(hand_x, hand_y, frame_width, frame_height)
         
         # Apply smoothing
@@ -130,6 +115,7 @@ class MouseController:
         
         # Move cursor
         pyautogui.moveTo(smooth_x, smooth_y, duration=0)
+
     
     def left_click(self):
         """Perform a left mouse click with cooldown."""
@@ -193,17 +179,6 @@ class MouseController:
         return False
     
     def execute_action(self, gesture_data, hand_landmarks, frame_shape):
-        """
-        Execute the appropriate action based on the detected gesture.
-        
-        Args:
-            gesture_data: Dictionary with gesture information
-            hand_landmarks: MediaPipe hand landmarks
-            frame_shape: Tuple of (height, width, channels)
-            
-        Returns:
-            str: Action performed
-        """
         gesture_name = gesture_data.get('gesture_key', 'NEUTRAL')
         action = gesture_data.get('action', 'none')
         
