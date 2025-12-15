@@ -210,5 +210,4 @@ class DrawingManager:
     def clear(self):
         """Clear the drawing canvas."""
         self.canvas = None
-        
-        return frame
+
