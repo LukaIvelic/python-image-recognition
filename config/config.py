@@ -8,8 +8,8 @@ MIRROR_VIEW = True  # Flip frame horizontally for mirror effect
 
 # MediaPipe Initialization
 MAX_NUM_HANDS = 1
-MIN_DETECTION_CONFIDENCE = 0.45 # Lowered for better tracking with motion
-MIN_TRACKING_CONFIDENCE = 0.45
+MIN_DETECTION_CONFIDENCE = 0.6  # Balanced for accuracy and detection
+MIN_TRACKING_CONFIDENCE = 0.6   # Balanced for accuracy and detection
 STATIC_IMAGE_MODE = False
 
 # Display Settings
