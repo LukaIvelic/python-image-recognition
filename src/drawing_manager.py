@@ -207,6 +207,23 @@ class DrawingManager:
         frame[y:y+h, x:x+w] = frame_roi
         return frame
 
+    def set_color(self, color):
+        """
+        Set the drawing color.
+        
+        Args:
+            color: BGR tuple for the drawing color
+        """
+        self.draw_color = color
+        self.brush_thickness = DRAWING_THICKNESS
+        print(f"Drawing color set to: {color}")
+
+    def set_eraser(self):
+        """Set eraser mode."""
+        self.draw_color = ERASER_COLOR
+        self.brush_thickness = ERASER_THICKNESS
+        print("Eraser mode activated")
+
     def clear(self):
         """Clear the drawing canvas."""
         self.canvas = None

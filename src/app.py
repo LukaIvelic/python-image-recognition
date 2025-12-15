@@ -78,9 +78,8 @@ class HandGestureApp:
             print(f"Error: Could not open camera at index {CAMERA_INDEX}")
             return False
             
-        # Fullscreen Window Setup
+        # Normal Window Setup (resizable with title bar)
         cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL)
-        cv2.setWindowProperty(WINDOW_NAME, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
         
         return True
     

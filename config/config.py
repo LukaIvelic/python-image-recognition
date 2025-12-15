@@ -8,8 +8,8 @@ MIRROR_VIEW = True  # Flip frame horizontally for mirror effect
 
 # MediaPipe Initialization
 MAX_NUM_HANDS = 1
-MIN_DETECTION_CONFIDENCE = 0.6 # Lowered for better tracking with motion
-MIN_TRACKING_CONFIDENCE = 0.5
+MIN_DETECTION_CONFIDENCE = 0.45 # Lowered for better tracking with motion
+MIN_TRACKING_CONFIDENCE = 0.45
 STATIC_IMAGE_MODE = False
 
 # Display Settings
@@ -51,11 +51,11 @@ DRAWING_COLOR_GREEN = (0, 255, 0)
 ERASER_COLOR = (0, 0, 0)
 
 DEFAULT_DRAWING_COLOR = DRAWING_COLOR_PINK
-DRAWING_THICKNESS = 15
+DRAWING_THICKNESS = 5
 ERASER_THICKNESS = 50
 
 # Smoothing
 SMOOTHING_FACTOR = 0.5  # Increased for faster response (less lag)
 
 # Visuals
-DRAWING_OPACITY = 0.5  # 50% transparency
+DRAWING_OPACITY = 1.0  # Solid lines (no transparency)
