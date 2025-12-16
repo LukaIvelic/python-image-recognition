@@ -6,9 +6,12 @@ Finger order: [Thumb, Index, Middle, Ring, Pinky]
 """
 
 # Landmark indices for MediaPipe hand tracking
+# Landmark indices for MediaPipe hand tracking
+# Landmark indices for MediaPipe hand tracking
 LANDMARK_INDICES = {
     'THUMB_TIP': 4,
     'THUMB_IP': 3,
+    'THUMB_MCP': 2,
     'INDEX_TIP': 8,
     'INDEX_PIP': 6,
     'INDEX_MCP': 5,
@@ -26,37 +29,44 @@ LANDMARK_INDICES = {
 
 # Mouse control gesture definitions
 GESTURES = {
-    'NEUTRAL': {
+    'DRAG': {
         'fingers': [False, False, False, False, False],
-        'description': 'Fist - No action',
-        'action': 'none',
+        'description': 'Fist - Drag (Mouse Down + Move)',
+        'action': 'drag',
         'exact_match': True,
         'priority': 1
+    },
+    'DOUBLE_CLICK': {
+        'fingers': [True, True, False, False, False],
+        'description': 'Gun (Thumb+Index) - Double Click',
+        'action': 'double_click',
+        'exact_match': True,
+        'priority': 2
     },
     'CURSOR_CONTROL': {
         'fingers': [False, True, False, False, False],
-        'description': 'Index finger - Move cursor',
-        'action': 'move_cursor',
+        'description': 'Index finger - Fallback Move',
+        'action': 'none', # Handled by Pinch
         'exact_match': True,
-        'priority': 1
+        'priority': 99
     },
-    # 'LEFT_CLICK': {
-    #     'fingers': [False, True, True, False, False],
-    #     'description': 'Peace sign (Index + Middle) - Left click',
-    #     'action': 'left_click',
-    #     'exact_match': True,
-    #     'priority': 2
-    # },
+    'LEFT_CLICK': {
+        'fingers': [False, True, False, False, False],
+        'description': 'Index Finger - Left Click',
+        'action': 'left_click',
+        'exact_match': True,
+        'priority': 2
+    },
     'RIGHT_CLICK': {
-        'fingers': [True, False, False, False, True],
-        'description': 'Thumb + Pinky - Right click',
+        'fingers': [False, True, True, False, False],
+        'description': 'Peace Sign - Right Click',
         'action': 'right_click',
         'exact_match': True,
         'priority': 2
     },
     'SCROLL_UP': {
         'fingers': [False, True, True, True, False],
-        'description': 'Three fingers (Index + Middle + Ring) - Scroll up',
+        'description': 'Three fingers - Scroll up',
         'action': 'scroll_up',
         'exact_match': True,
         'priority': 2
@@ -68,20 +78,7 @@ GESTURES = {
         'exact_match': True,
         'priority': 2
     },
-    'LEFT_CLICK': {
-        'fingers': [True, True, False, False, False],
-        'description': 'Thumb + Index (L shape) - Left click',
-        'action': 'left_click',
-        'exact_match': True,
-        'priority': 3
-    },
-    'DOUBLE_CLICK': {
-        'fingers': [False, True, False, False, True],
-        'description': 'Index + Pinky - Double click',
-        'action': 'double_click',
-        'exact_match': True,
-        'priority': 2
-    },
+
     'STOP': {
         'fingers': [True, True, True, True, True],
         'description': 'Open hand - Stop all actions',
@@ -93,11 +90,11 @@ GESTURES = {
 
 # Gesture display names (for better terminal output)
 GESTURE_DISPLAY_NAMES = {
-    'NEUTRAL': 'NEUTRAL (Fist)',
-    'CURSOR_CONTROL': 'CURSOR CONTROL',
-    'LEFT_CLICK': 'LEFT CLICK (L shape)',
-    'RIGHT_CLICK': 'RIGHT CLICK',
-    'DOUBLE_CLICK': 'DOUBLE CLICK (Index + Pinky)',
+    'DRAG': 'DRAG (Fist)',
+    'DOUBLE_CLICK': 'DOUBLE CLICK (Gun)',
+    'CURSOR_CONTROL': 'PINCH TO MOVE',
+    'LEFT_CLICK': 'LEFT CLICK (Index)',
+    'RIGHT_CLICK': 'RIGHT CLICK (Peace)',
     'SCROLL_UP': 'SCROLL UP (3 fingers)',
     'SCROLL_DOWN': 'SCROLL DOWN (4 fingers)',
     'STOP': 'STOP'

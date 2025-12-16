@@ -9,7 +9,10 @@ from config.config import (
     MAX_NUM_HANDS,
     MIN_DETECTION_CONFIDENCE,
     MIN_TRACKING_CONFIDENCE,
-    STATIC_IMAGE_MODE
+    MIN_DETECTION_CONFIDENCE,
+    MIN_TRACKING_CONFIDENCE,
+    STATIC_IMAGE_MODE,
+    MODEL_COMPLEXITY
 )
 
 
@@ -25,7 +28,7 @@ class HandDetector:
         self.hands = self.mp_hands.Hands(
             static_image_mode=STATIC_IMAGE_MODE,
             max_num_hands=MAX_NUM_HANDS,
-            model_complexity=0, # Lite model for speed
+            model_complexity=MODEL_COMPLEXITY, 
             min_detection_confidence=MIN_DETECTION_CONFIDENCE,
             min_tracking_confidence=MIN_TRACKING_CONFIDENCE
         )
@@ -50,9 +53,36 @@ class HandDetector:
             scale = analysis_w / w
             analysis_h = int(h * scale)
             small_frame = cv2.resize(frame, (analysis_w, analysis_h))
-            rgb_frame = cv2.cvtColor(small_frame, cv2.COLOR_BGR2RGB)
         else:
-            rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            small_frame = frame
+        
+        # 1. Saturation Boost (HSV) - Helps distinguish skin from background
+        # 2. CLAHE (LAB) - Improves local contrast
+        try:
+            # Saturation Boost
+            hsv = cv2.cvtColor(small_frame, cv2.COLOR_BGR2HSV)
+            h_c, s_c, v_c = cv2.split(hsv)
+            # Multiply saturation by 1.5 and clip
+            s_c = cv2.multiply(s_c, 1.5) 
+            # (Note: cv2.multiply handles clamping automatically for uint8, usually. 
+            # But let's be safe or just trust cv2's saturation arithmetic)
+            # Actually cv2.multiply(src1, scale) returns result.
+            hsv_boosted = cv2.merge((h_c, s_c, v_c))
+            boosted_frame = cv2.cvtColor(hsv_boosted, cv2.COLOR_HSV2BGR)
+            
+            # CLAHE (on boosted frame)
+            lab = cv2.cvtColor(boosted_frame, cv2.COLOR_BGR2LAB)
+            l, a, b = cv2.split(lab)
+            clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+            cl = clahe.apply(l)
+            limg = cv2.merge((cl, a, b))
+            enhanced_frame = cv2.cvtColor(limg, cv2.COLOR_LAB2BGR)
+        except Exception as e:
+            # Fallback
+            # print(f"Preprocessing error: {e}")
+            enhanced_frame = small_frame
+
+        rgb_frame = cv2.cvtColor(enhanced_frame, cv2.COLOR_BGR2RGB)
         
         # Process the frame
         results = self.hands.process(rgb_frame)

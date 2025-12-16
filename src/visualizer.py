@@ -132,11 +132,13 @@ class Visualizer:
                 
                 # --- 2. Help Menu Text ---
                 if is_help_visible:
-                     box_w, box_h = 600, 450
+                     box_w, box_h = 900, 600
                      x1, y1 = (w - box_w) // 2, (h - box_h) // 2
                      
                      # Title
                      draw.text((x1 + 40, y1 + 40), "HAND GESTURE GUIDE", font=font_bold, fill=(255, 255, 255))
+                     # Draw divider
+                     draw.line([(x1 + 40, y1 + 80), (x1 + box_w - 40, y1 + 80)], fill=(200, 200, 200), width=1)
                      
                      col1_x = x1 + 40
                      col2_x = x1 + 320
@@ -145,12 +147,40 @@ class Visualizer:
                      
                      # Gestures
                      draw.text((col1_x, start_y), "GESTURES", font=font_norm, fill=(0, 255, 255))
-                     gestures_list = [
-                         ("Index Point", "Move Cursor"),
-                         ("Pinch (Index+Thumb)", "Draw"),
-                         ("Index Up", "Hover"),
-                         ("Fist", "Pause")
-                     ]
+                     
+                     if mode == "DRAWING":
+                         gestures_list = [
+                             ("Pinch (Index+Thumb)", "Draw"),
+                             ("Index Up", "Hover"),
+                             ("Fist", "Pause")
+                         ]
+                         draw_controls = [
+                             ("'d'", "Switch to Mouse"),
+                             ("'c'", "Clear Canvas"),
+                             ("'h'", "Toggle Help"),
+                             ("'q'", "Quit"),
+                             ("1/2/3", "Colors"),
+                             ("0", "Eraser")
+                         ]
+                         controls = draw_controls
+                     else:
+                         # Mouse Mode
+                         gestures_list = [
+                             ("Pinch (Index+Thumb)", "Move Cursor"),
+                             ("Index+Middle (Together)", "Scroll Mode"),
+                             ("Fist", "Drag (Grab)"),
+                             ("Index (Hold)", "Left Click"),
+                             ("Peace (Hold)", "Right Click"),
+                             ("Gun (Hold)", "Double Click"),
+                             ("Open Hand", "Stop")
+                         ]
+                         mouse_controls = [
+                             ("'d'", "Switch to Drawing"),
+                             ("'h'", "Toggle Help"),
+                             ("'q'", "Quit")
+                         ]
+                         controls = mouse_controls
+
                      for i, (g, desc) in enumerate(gestures_list):
                          y = start_y + 40 + (i * step)
                          draw.text((col1_x, y), g, font=font_norm, fill=(220, 220, 220))
@@ -158,14 +188,7 @@ class Visualizer:
                          
                      # Controls
                      draw.text((col2_x, start_y), "CONTROLS", font=font_norm, fill=(0, 255, 255))
-                     controls = [
-                         ("'d'", "Toggle Draw/Mouse"),
-                         ("'c'", "Clear Canvas"),
-                         ("'h'", "Toggle Help"),
-                         ("'q'", "Quit App"),
-                         ("1/2/3", "Colors"),
-                         ("0", "Eraser")
-                     ]
+                     
                      for i, (k, desc) in enumerate(controls):
                          y = start_y + 40 + (i * step)
                          draw.text((col2_x, y), k, font=font_norm, fill=(255, 255, 0))
@@ -200,7 +223,7 @@ class Visualizer:
             cv2.rectangle(frame, (bx1, by1), (bx2, by2), (100, 100, 100), 1)
         
         if is_help_visible:
-             box_w, box_h = 600, 450
+             box_w, box_h = 900, 600
              x1, y1 = (w - box_w) // 2, (h - box_h) // 2
              x2, y2 = x1 + box_w, y1 + box_h
              
@@ -318,4 +341,3 @@ class Visualizer:
     def print_exit_message(self):
         """Print exit message."""
         print("\nGesture recognition stopped.")
-

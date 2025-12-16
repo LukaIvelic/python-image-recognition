@@ -194,8 +194,10 @@ class DrawingManager:
         canvas_roi = self.canvas[y:y+h, x:x+w]
         mask_roi = mask[y:y+h, x:x+w]
         
-        # Blend ONLY the ROI
-        overlay_roi = cv2.addWeighted(frame_roi, 1.0, canvas_roi, DRAWING_OPACITY, 0)
+        # Blend ONLY the ROI (Alpha Blending)
+        # Using (1.0 - DRAWING_OPACITY) for the background ensures that at 1.0 opacity, 
+        # the drawing completely covers the background (Solid), instead of adding to it.
+        overlay_roi = cv2.addWeighted(frame_roi, 1.0 - DRAWING_OPACITY, canvas_roi, DRAWING_OPACITY, 0)
         
         # Masked Copy in ROI
         mask_bool = mask_roi > 0
