@@ -7,7 +7,8 @@ import pyautogui
 import time
 import numpy as np
 from src.one_euro_filter import OneEuroFilter
-from config.config import HAND_PADDING_X, HAND_PADDING_Y, SCROLL_AMOUNT
+from src.utils.geometry import GeometryUtils
+from config.config import SCROLL_AMOUNT
 
 # Configure PyAutoGUI
 pyautogui.FAILSAFE = True  # Move mouse to corner to abort
@@ -32,11 +33,7 @@ class MouseController:
             self.screen_width = screen_width
             self.screen_height = screen_height
         
-        # Hand detection padding/margins
-        # Use only the center portion of the camera view for mapping
-        # This allows reaching screen edges while hand stays in detection zone
-        self.padding_x = HAND_PADDING_X
-        self.padding_y = HAND_PADDING_Y
+
         
         # Cursor smoothing
         self.prev_x = None
@@ -91,38 +88,7 @@ class MouseController:
         
         return int(screen_x), int(screen_y)
     
-    def hand_to_screen_coords(self, hand_x, hand_y, frame_width, frame_height):
-        """
-        Convert hand coordinates with robust mapping scaling.
-        Ensures full screen reachability.
-        """
-        # Define the box within the camera view that maps to the full screen
-        x_min = self.padding_x
-        x_max = 1.0 - self.padding_x
-        y_min = self.padding_y
-        y_max = 1.0 - self.padding_y
-        
-        # Map x
-        if hand_x < x_min: screen_x = 0
-        elif hand_x > x_max: screen_x = self.screen_width
-        else:
-             screen_x = (hand_x - x_min) / (x_max - x_min) * self.screen_width
-             
-        # Map y
-        if hand_y < y_min: screen_y = 0
-        elif hand_y > y_max: screen_y = self.screen_height
-        else:
-            screen_y = (hand_y - y_min) / (y_max - y_min) * self.screen_height
-        
-        # MIRROR FIX: 
-        # Config MIRROR_VIEW = True means camera frame is flipped.
-        # So Hand Right -> Frame Right (x=1.0).
-        # We want Cursor Right -> Screen Right (x=Width).
-        # Current logic checks x=1.0 > x_max -> screen_x = Width.
-        # This is CORRECT for mirroring.
-        # No inversion lines should exist here.
-        
-        return int(screen_x), int(screen_y)
+
     
     def move_cursor(self, hand_x, hand_y, frame_width, frame_height):
         """
@@ -135,7 +101,10 @@ class MouseController:
 
         # MIRROR FIX: Use direct mapping. 
         # (Frame is already flipped if needed, so Left=Left, Right=Right)
-        screen_x, screen_y = self.hand_to_screen_coords(hand_x, hand_y, frame_width, frame_height)
+        screen_x, screen_y = GeometryUtils.map_hand_to_screen(
+            hand_x, hand_y, 
+            self.screen_width, self.screen_height
+        )
         
         # Apply smoothing
         smooth_x, smooth_y = self.smooth_position(screen_x, screen_y)
@@ -155,8 +124,12 @@ class MouseController:
             pyautogui.mouseDown()
             self.is_dragging = True
             
-        # MIRROR FIX: Use direct mapping. 
-        screen_x, screen_y = self.hand_to_screen_coords(hand_x, hand_y, frame_width, frame_height)
+        # Convert absolute screen coords
+        # Use Geometry Utils for mapping
+        screen_x, screen_y = GeometryUtils.map_hand_to_screen(
+            hand_x, hand_y, 
+            self.screen_width, self.screen_height
+        )
         
         # Apply smoothing
         smooth_x, smooth_y = self.smooth_position(screen_x, screen_y)
