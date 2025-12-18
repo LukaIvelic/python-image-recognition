@@ -96,15 +96,11 @@ class HandGestureApp:
         self.gesture_start_time = 0
         self.scroll_zero_y = None # Zero point for joystick scrolling
         self.last_scroll_active_time = 0 # Timer for sticky scroll
-        self.last_scroll_active_time = 0 # Timer for sticky scroll
-        self.last_scroll_active_time = 0 # Timer for sticky scroll
         self.gesture_buffer = deque(maxlen=6) # Increased buffer for stability (prevents flicker)
         self.hand_visible_start_time = 0 # Timer for hand entry debounce
         self.last_movement_time = 0 # Timer for movement debounce (Pinch -> Click transition)
         self.gesture_triggered = False # Flag for single-shot actions
         self.needs_reset = False # Flag to force neutral state between clicks
-        self.hand_visible_start_time = 0 # Timer for hand entry debounce
-        self.gesture_triggered = False # Flag for single-shot actions
     
     def initialize_camera(self):
         """
